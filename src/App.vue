@@ -27,7 +27,7 @@
         class="knob"
         @click.stop
       >
-        <circle r="50" />
+        <circle :r="knobRadius" />
         <text :class="{ icons: knob.id === 'volume' }" dy=".3em">
           {{ knob.id === 'volume' ? '' : knob.activeLabel }}
         </text>
@@ -49,8 +49,7 @@ import Tone from 'tone'
 import teoria from 'teoria'
 import Draggable from 'gsap/Draggable'
 import { TweenLite, Linear } from 'gsap'
-import sample from 'lodash.sample'
-import random from 'lodash.random'
+import { sample, random } from 'lodash'
 import * as d3 from 'd3'
 window.teoria = teoria
 window.Tone = Tone
@@ -79,7 +78,6 @@ export default {
       playing: false,
       lastImprovCircleId: 0,
       curvePoints: [],
-      curveFunction: null,
       improvCircles: [],
       knobs: [
         {
@@ -107,26 +105,26 @@ export default {
           activeLabel: 'aug',
           activeValue: 'aug',
           options: [
-            { value: 'dim', label: 'dim' },
-            { value: 'min7b5', label: 'min7b5' },
-            { value: 'M', label: 'M' },
+            { value: 'dim', label: 'o' },
+            { value: 'min7b5', label: 'ø' },
             { value: 'm', label: 'm' },
-            { value: 'min7', label: 'min7' },
-            { value: 'dom7', label: 'dom7' },
-            { value: 'maj7', label: 'maj7' },
-            { value: 'aug', label: 'aug' },
+            { value: 'min7', label: 'm7' },
+            { value: 'dom7', label: '7' },
+            { value: 'M', label: 'M' },
+            { value: 'maj7', label: 'Δ7' },
+            { value: 'aug', label: '+' },
           ],
         },
         {
           id: 'pulse',
           activeLabel: '3',
-          activeValue: '3',
+          activeValue: 3,
           options: [
-            { value: '1', label: '1' },
-            { value: '2', label: '2' },
-            { value: '3', label: '3' },
-            { value: '4', label: '4' },
-            { value: '5', label: '5' },
+            { value: 1, label: '1' },
+            { value: 2, label: '2' },
+            { value: 3, label: '3' },
+            { value: 4, label: '4' },
+            { value: 5, label: '5' },
           ],
         },
         {
@@ -150,6 +148,29 @@ export default {
     }
   },
   computed: {
+    middleY() {
+      return this.height / 2
+    },
+
+    halfThird() {
+      return this.height / 2 / 3
+    },
+
+    minY() {
+      return this.middleY - this.halfThird
+    },
+
+    maxY() {
+      return this.middleY + this.halfThird
+    },
+
+    knobRadius() {
+      const per = 0.05 * this.width
+      const r = Math.max(25, Math.min(50, per))
+      console.log({ r, per })
+      return r
+    },
+
     root() {
       return this.knobs.find(knob => knob.id === 'root').activeValue
     },
@@ -175,6 +196,15 @@ export default {
       return this.curveFunction(this.curvePoints)
     },
 
+    curveFunction() {
+      return d3
+        .area()
+        .x(d => d.x)
+        .y1(d => d.y)
+        .y0(this.height)
+        .curve(d3.curveCatmullRom.alpha(0.5))
+    },
+
     droneNotes() {
       const notes = teoria
         .note(this.root)
@@ -193,13 +223,15 @@ export default {
         for (let i = 1; i < 8; i++) {
           const prev = octatonic[i - 1]
           const interval = i % 2 === 1 ? 'M2' : 'm2'
-          octatonic.push(teoria.interval.from(prev, interval))
+          const note = teoria.interval.from(prev, interval)
+          octatonic.push(note)
         }
-        return octatonic
+        return octatonic.map(note => note.interval('P8').interval('P8'))
       } else {
         const scale = teoria
           .note(this.root)
           .scale(this.scale)
+          .interval('P8')
           .interval('P8')
           .interval('P8')
           .notes()
@@ -207,6 +239,7 @@ export default {
           ...scale,
           teoria
             .note(this.root)
+            .interval('P8')
             .interval('P8')
             .interval('P8')
             .interval('P8'),
@@ -263,31 +296,31 @@ export default {
   },
 
   mounted() {
-    document.addEventListener('resize', () => this.resize())
-    this.resize()
-
     this.initKnobs()
+    this.setRandomConfiguration()
 
-    this.curveFunction = d3
-      .area()
-      .x(d => d.x)
-      .y1(d => d.y)
-      .y0(this.height)
-      .curve(d3.curveCatmullRom.alpha(0.5))
-
-    // generate random configuration
-    this.knobs.forEach(knob => {
-      if (knob.id === 'volume') return
-      const r = Math.floor(Math.random() * knob.options.length)
-      let y = map(r, 0, knob.options.length - 1, this.minY, this.maxY)
-      this.setKnobPosition(knob, knob.x, y)
-    })
-
-    const volumeKnob = this.knobs.find(knob => knob.id === 'volume')
-    this.setKnobPosition(volumeKnob, volumeKnob.x, volumeKnob.y)
+    window.addEventListener('resize', () => this.resize())
+    this.resize()
   },
 
   methods: {
+    setRandomConfiguration() {
+      // generate random configuration
+      this.knobs.forEach(knob => {
+        if (knob.id === 'volume') return
+        const r = Math.floor(Math.random() * knob.options.length)
+        let y = map(r, 0, knob.options.length - 1, this.minY, this.maxY)
+        this.setKnobPosition(knob, knob.x, y)
+      })
+
+      const volumeKnob = this.knobs.find(knob => knob.id === 'volume')
+      this.setKnobPosition(
+        volumeKnob,
+        volumeKnob.x,
+        this.middleY - this.halfThird / 2
+      )
+    },
+
     improv(evt) {
       const id = `improv-circle-${++this.lastImprovCircleId}`
 
@@ -336,31 +369,19 @@ export default {
     },
 
     resize() {
+      this.previousWidth = this.width
+      this.previousHeight = this.height
       this.width = this.$el.clientWidth
       this.height = this.$el.clientHeight
+      this.updateKnobsPositions()
     },
 
     initKnobs() {
-      this.knobs.forEach((knob, idx) => {
-        const div = this.width / this.knobs.length
-        const x = div / 2 + div * idx
-        const y = this.height / 2
+      this.knobs.forEach(knob => {
         const id = `#${knob.id}`
-
-        TweenLite.set(id, { x, y })
-        knob.x = x
-        knob.y = y
-
-        const middleY = this.height / 2
-        const halfThird = this.height / 2 / 3
-        this.minY = middleY - halfThird
-        this.maxY = middleY + halfThird
-
         const that = this
-
         knob.draggable = Draggable.create(id, {
           type: 'y',
-          bounds: { minY: this.minY, maxY: this.maxY },
           cursor: 'pointer',
           onDrag() {
             that.setKnobPosition(knob, this.x, this.y)
@@ -368,6 +389,17 @@ export default {
         })[0]
       })
     },
+
+    updateKnobsPositions() {
+      this.knobs.forEach((knob, idx) => {
+        const div = this.width / this.knobs.length
+        const x = div / 2 + div * idx
+        const y = map(knob.y, 0, this.previousHeight, 0, this.height)
+        this.setKnobPosition(knob, x, y)
+        knob.draggable.applyBounds({ minY: this.minY, maxY: this.maxY })
+      })
+    },
+
     setKnobPosition(knob, x, y) {
       TweenLite.set(`#${knob.id}`, { x, y })
       knob.x = x
@@ -377,7 +409,6 @@ export default {
       if (knob.id === 'volume') {
         let vol = map(y, this.maxY, this.minY, knob.minValue, knob.maxValue)
         vol = vol <= knob.minValue + 0.5 ? -Infinity : vol
-        console.log(vol)
         knob.activeValue = vol
       } else {
         const idx = Math.round(
@@ -448,6 +479,37 @@ body {
   margin: 0;
   background: teal;
 }
+
+html {
+  // Small devices (landscape phones, 576px and up)
+  @media (min-width: 576px) {
+    text {
+      font-size: 13px;
+    }
+  }
+
+  // Medium devices (tablets, 768px and up)
+  @media (min-width: 768px) {
+    text {
+      font-size: 14px;
+    }
+  }
+
+  // Large devices (desktops, 992px and up)
+  @media (min-width: 992px) {
+    text {
+      font-size: 15px;
+    }
+  }
+
+  // Extra large devices (large desktops, 1200px and up)
+  @media (min-width: 1200px) {
+    text {
+      font-size: 16px;
+    }
+  }
+}
+
 #app {
   font-family: 'Raleway', sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -469,7 +531,7 @@ body {
     text-anchor: middle;
     fill: var(--text-color);
     font-family: 'Raleway', sans-serif;
-    font-size: 20px;
+    font-size: 1.2em;
   }
 }
 .icons {
@@ -512,4 +574,11 @@ body {
 //     padding: 0.5em 0.6em;
 //   }
 // }
+
+* {
+  -webkit-tap-highlight-color: transparent !important;
+  &:focus {
+    outline: none !important;
+  }
+}
 </style>
