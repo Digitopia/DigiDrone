@@ -79,6 +79,7 @@ export default {
       lastImprovCircleId: 0,
       curvePoints: [],
       improvCircles: [],
+      improvNoteDuration: Tone.Time('4n'),
       knobs: [
         {
           id: 'root',
@@ -120,18 +121,18 @@ export default {
           activeLabel: '3',
           activeValue: 3,
           options: [
-            { value: 1, label: '1' },
-            { value: 2, label: '2' },
-            { value: 3, label: '3' },
-            { value: 4, label: '4' },
-            { value: 5, label: '5' },
+            { value: '1n', label: '|' },
+            { value: '2n', label: '||' },
+            { value: '4n', label: '|||' },
+            { value: '8n', label: '||||' },
+            { value: '16n', label: '|||||' },
           ],
         },
         {
           id: 'volume',
           activeValue: -10,
           activeLabel: '&#xf027;',
-          minValue: -60,
+          minValue: -30,
           maxValue: -3,
         },
       ],
@@ -213,7 +214,8 @@ export default {
       notes.push(notes.shift().interval('P8'))
       notes.push(notes.shift().interval('P8'))
       notes.push(notes[0].interval('P8'))
-      return notes.map(note => note.interval('P8'))
+      return notes
+      // return notes.map(note => note.interval('P8'))
     },
 
     improvNotes() {
@@ -264,6 +266,7 @@ export default {
 
     pulse() {
       console.log('pulse:', this.pulse)
+      this.loop.interval = this.pulse
     },
 
     volume() {
@@ -278,21 +281,8 @@ export default {
       if (evt.key === ' ') this.toggleDrone()
     })
 
-    this.rootSynth = new Tone.Oscillator({
-      type: 'sine',
-      frequency: this.root,
-      detune: 0,
-      phase: 0,
-      partials: [],
-      partialCount: 0,
-    }).toMaster()
-
-    this.droneSynth = new Tone.PolySynth(6, Tone.Synth).toMaster()
-    this.improvSynth = new Tone.PolySynth(6, Tone.Synth).toMaster()
-
-    window.rootSynth = this.rootSynth
-    window.droneSynth = this.droneSynth
-    window.improvSynth = this.improvSynth
+    this.initSound()
+    this.initDroneLoop()
   },
 
   mounted() {
@@ -304,6 +294,139 @@ export default {
   },
 
   methods: {
+    initDroneLoop() {
+      this.loop = new Tone.Loop(() => {
+        // const r = random(
+        //   0,
+        //   this.knobs.find(knob => knob.id === 'pulse').options.length
+        // )
+        // console.log({ r, pulse: this.pulse })
+        // if (r > this.pulse) return
+        // if (Math.random() > 0.5) return
+
+        // get a random note from droneNotes that is not the previous one
+        if (!this.chosenNote) this.chosenNote = teoria.note(this.root)
+        const n = sample(
+          this.droneNotes.filter(
+            note => note.scientific() !== this.chosenNote.scientific()
+          )
+        )
+        this.chosenNote = n
+
+        const dur = sample(['2n', '2n', '2n', '2n', '4n', '4n', '8n'])
+        console.log({ note: n.scientific(), dur })
+
+        this.droneSynth.triggerAttackRelease(
+          n.scientific(),
+          dur,
+          Tone.now(),
+          random(0.6, 1)
+        )
+      }, this.pulse)
+      this.loop.start(0)
+    },
+
+    initSound() {
+      Tone.Transport.bpm.value = 60
+
+      // reverb
+      const reverb = new Tone.Reverb()
+      reverb.decay = 3.5
+      reverb.preDelay = 0.01
+      reverb.generate()
+
+      // root synth
+      // this.rootSynth = new Tone.Oscillator({
+      //   type: 'sine',
+      //   frequency: this.root,
+      //   detune: 0,
+      //   phase: 0,
+      //   partials: [],
+      //   partialCount: 0,
+      // }).toMaster()
+
+      this.rootSynth = new Tone.Synth({
+        oscillator: {
+          type: 'sine',
+          frequency: this.root,
+          detune: 0,
+          phase: 0,
+          partials: [],
+          partialCount: 0,
+        },
+        envelope: {
+          attack: 0.005,
+          decay: 0.1,
+          sustain: 0.3,
+          release: 1,
+        },
+      }).toMaster()
+
+      // this.rootSynth = new Tone.OmniOscillator(this.root, 'amsine').chain(
+      //   Tone.Master
+      // )
+      // this.rootSynth.set({
+      //   harmonicity: 0.5,
+      //   oscillator: {
+      //     type: 'sine',
+      //   },
+      //   envelope: {
+      //     attack: 0.01,
+      //     decay: 0.01,
+      //     sustain: 1,
+      //     release: 0.5,
+      //   },
+      //   modulation: {
+      //     type: 'sine',
+      //   },
+      //   modulationEnvelope: {
+      //     attack: 0.5,
+      //     decay: 0,
+      //     sustain: 1,
+      //     release: 0.5,
+      //   },
+      //   // portamento: Tone.Time('8n'),
+      // })
+
+      // drone synth
+      this.droneSynth = new Tone.PolySynth(6, Tone.Synth).chain(
+        // reverb,
+        Tone.Master
+      )
+      this.droneSynth.set({
+        oscillator: {
+          type: 'sine',
+        },
+        envelope: {
+          attack: 0.25,
+          decay: 0.5,
+          sustain: 0.1,
+          release: 0.1,
+        },
+      })
+
+      // improv synth
+      this.improvSynth = new Tone.PolySynth(6, Tone.Synth).chain(
+        reverb,
+        Tone.Master
+      )
+      this.improvSynth.set({
+        oscillator: {
+          type: 'sine',
+        },
+        envelope: {
+          attack: 0.25,
+          decay: 0.5,
+          sustain: 0.1,
+          release: 0.1,
+        },
+      })
+
+      window.rootSynth = this.rootSynth
+      window.droneSynth = this.droneSynth
+      window.improvSynth = this.improvSynth
+    },
+
     setRandomConfiguration() {
       // generate random configuration
       this.knobs.forEach(knob => {
@@ -334,10 +457,7 @@ export default {
 
       // determine which note it is
       const { offsetX: x, offsetY: y } = evt
-      const amp = Math.max(
-        0,
-        mapWithFunction(y, this.maxY, 0, 0, 1, x => x * x)
-      )
+      const amp = Math.max(0, map(y, this.maxY, 0, 0, 1))
       const idx = Math.floor(map(x, 0, this.width, 0, this.improvNotes.length))
       const n = this.improvNotes[idx]
 
@@ -345,14 +465,14 @@ export default {
 
       this.improvSynth.triggerAttackRelease(
         n.scientific(),
-        '1n',
+        this.improvNoteDuration,
         Tone.now(),
         amp
       )
 
       // animate circle
       Vue.nextTick(() => {
-        TweenLite.to(`#${id}`, 2, {
+        TweenLite.to(`#${id}`, this.improvNoteDuration.toSeconds(), {
           attr: {
             r: 50,
           },
@@ -360,6 +480,8 @@ export default {
           ease: Linear.easeNone,
           onComplete: () => {
             console.log('finished', id)
+            // const idx = this.improvCircles.find(circle => circle.id === id)
+            // this.improvCircles.splice(idx, 1)
             this.improvCircles = this.improvCircles.filter(
               circle => circle.id !== id
             )
@@ -436,33 +558,19 @@ export default {
     toggleDrone() {
       this.playing = !this.playing
 
-      if (this.rootSynth.state === 'started') {
-        this.rootSynth.stop()
-        window.clearInterval(this.interval)
+      if (!this.playing) {
+        Tone.Master.volume.rampTo(-120, 0.5)
+        Tone.Transport.stop()
+        this.loop.stop()
         return
       }
 
-      this.rootSynth.start()
-      this.chosenNote = teoria.note(this.root)
-
-      this.interval = window.setInterval(() => {
-        const r = Math.random()
-        if (r > this.pulse) return
-        const n = sample(
-          this.droneNotes.filter(
-            note => note.scientific() !== this.chosenNote.scientific()
-          )
-        )
-        this.chosenNote = n
-        const dur = Math.random() * 2 + 0.8
-        console.log('playing', n.scientific(), 'for', dur.toFixed(2), 'seconds')
-        this.droneSynth.triggerAttackRelease(
-          n.scientific(),
-          dur,
-          Tone.now,
-          random(0.6, 1)
-        )
-      }, 1000)
+      Tone.Master.volume.value = -Infinity
+      Tone.Master.volume.rampTo(this.volume, 0.5)
+      // this.rootSynth.start()
+      this.rootSynth.triggerAttack(this.root)
+      Tone.Transport.start()
+      this.loop.start()
     },
   },
 }
