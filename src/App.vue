@@ -51,6 +51,7 @@ import Draggable from 'gsap/Draggable'
 import { TweenLite, Linear } from 'gsap'
 import { sample, random } from 'lodash'
 import * as d3 from 'd3'
+import { disableBodyScroll } from 'body-scroll-lock'
 window.teoria = teoria
 window.Tone = Tone
 window.map = map
@@ -291,6 +292,8 @@ export default {
 
     window.addEventListener('resize', () => this.resize())
     this.resize()
+
+    disableBodyScroll(document.querySelectorAll('#canvas'))
   },
 
   methods: {
