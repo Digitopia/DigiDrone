@@ -17,7 +17,7 @@
       />
 
       <!-- curve path -->
-      <path :d="curveStr" class="drone-area" />
+      <path :d="curveStr" class="drone-area" @click.stop />
 
       <!-- Control knobs -->
       <g
