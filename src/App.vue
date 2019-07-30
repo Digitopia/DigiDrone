@@ -121,11 +121,11 @@ export default {
           activeLabel: '3',
           activeValue: 3,
           options: [
-            { value: '1n', label: '|' },
-            { value: '2n', label: '||' },
-            { value: '4n', label: '|||' },
-            { value: '8n', label: '||||' },
-            { value: '16n', label: '|||||' },
+            { value: '1n', label: '●' },
+            { value: '2n', label: '●●' },
+            { value: '4n', label: '●●●' },
+            { value: '8n', label: '●●●●' },
+            { value: '16n', label: '●●●●●' },
           ],
         },
         {
