@@ -60,11 +60,11 @@ function map(value, start1, stop1, start2, stop2) {
   return ((value - start1) / (stop1 - start1)) * (stop2 - start2) + start2
 }
 
-function mapWithFunction(value, start1, stop1, start2, stop2, fn) {
-  const inT = map(value, start1, stop1, 0, 1)
-  const outT = fn(inT)
-  return map(outT, 0, 1, start2, stop2)
-}
+// function mapWithFunction(value, start1, stop1, start2, stop2, fn) {
+//   const inT = map(value, start1, stop1, 0, 1)
+//   const outT = fn(inT)
+//   return map(outT, 0, 1, start2, stop2)
+// }
 
 function printNotes(label, notes) {
   console.log(label, notes.map(note => note.scientific()))
