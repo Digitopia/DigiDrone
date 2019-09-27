@@ -461,7 +461,9 @@ export default {
       // determine which note it is
       const { offsetX: x, offsetY: y } = evt
       const amp = Math.max(0, map(y, this.maxY, 0, 0, 1))
-      const idx = Math.floor(map(x, 0, this.width, 0, this.improvNotes.length))
+      const idx = Math.floor(
+        map(x, 0, this.width + 1, 0, this.improvNotes.length)
+      )
       const n = this.improvNotes[idx]
 
       console.log('improv:', n.scientific(), '@', amp)
