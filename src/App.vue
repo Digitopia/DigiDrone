@@ -1,7 +1,8 @@
 <template>
   <div class="wrapper">
     <svg
-      @click="improv($event)"
+      @touchstart="touch($event)"
+      @mousedown="click($event)"
       id="canvas"
       :viewBox="`0 0 ${width} ${height}`"
     >
@@ -25,7 +26,8 @@
         :key="knob.id"
         :id="knob.id"
         class="knob"
-        @click.stop
+        @mousedown.stop
+        @touchstart.stop
       >
         <circle :r="knobRadius" />
         <text :class="{ icons: knob.id === 'volume' }" dy=".3em">
@@ -74,6 +76,7 @@ export default {
   name: 'app',
   data() {
     return {
+      touched: false,
       width: 1600,
       height: 900,
       playing: false,
@@ -216,7 +219,6 @@ export default {
       notes.push(notes.shift().interval('P8'))
       notes.push(notes[0].interval('P8'))
       return notes
-      // return notes.map(note => note.interval('P8'))
     },
 
     improvNotes() {
@@ -299,14 +301,6 @@ export default {
   methods: {
     initDroneLoop() {
       this.loop = new Tone.Loop(() => {
-        // const r = random(
-        //   0,
-        //   this.knobs.find(knob => knob.id === 'pulse').options.length
-        // )
-        // console.log({ r, pulse: this.pulse })
-        // if (r > this.pulse) return
-        // if (Math.random() > 0.5) return
-
         // get a random note from droneNotes that is not the previous one
         if (!this.chosenNote) this.chosenNote = teoria.note(this.root)
         const n = sample(
@@ -354,8 +348,6 @@ export default {
           frequency: this.root,
           detune: 0,
           phase: 0,
-          partials: [],
-          partialCount: 0,
         },
         envelope: {
           attack: 0.005,
@@ -447,19 +439,25 @@ export default {
       )
     },
 
-    improv(evt) {
+    touch(evt) {
+      this.touched = true
+      const touch = evt.touches[evt.touches.length - 1]
+      this.improv(touch.pageX, touch.pageY)
+    },
+
+    click(evt) {
+      if (this.touched) return
+      console.log(evt)
+      this.improv(evt.offsetX, evt.offsetY)
+    },
+
+    improv(x, y) {
       const id = `improv-circle-${++this.lastImprovCircleId}`
 
       // add circle
-      this.improvCircles.push({
-        x: evt.offsetX,
-        y: evt.offsetY,
-        r: 10,
-        id,
-      })
+      this.improvCircles.push({ x, y, r: 10, id })
 
       // determine which note it is
-      const { offsetX: x, offsetY: y } = evt
       const amp = Math.max(0, map(y, this.maxY, 0, 0, 1))
       const idx = Math.floor(
         map(x, 0, this.width + 1, 0, this.improvNotes.length)
@@ -484,9 +482,6 @@ export default {
           opacity: 0,
           ease: Linear.easeNone,
           onComplete: () => {
-            console.log('finished', id)
-            // const idx = this.improvCircles.find(circle => circle.id === id)
-            // this.improvCircles.splice(idx, 1)
             this.improvCircles = this.improvCircles.filter(
               circle => circle.id !== id
             )
@@ -597,28 +592,28 @@ body {
 }
 
 html {
-  // Small devices (landscape phones, 576px and up)
+  // small devices (landscape phones, 576px and up)
   @media (min-width: 576px) {
     text {
       font-size: 13px;
     }
   }
 
-  // Medium devices (tablets, 768px and up)
+  // medium devices (tablets, 768px and up)
   @media (min-width: 768px) {
     text {
       font-size: 14px;
     }
   }
 
-  // Large devices (desktops, 992px and up)
+  // large devices (desktops, 992px and up)
   @media (min-width: 992px) {
     text {
       font-size: 15px;
     }
   }
 
-  // Extra large devices (large desktops, 1200px and up)
+  // extra large devices (large desktops, 1200px and up)
   @media (min-width: 1200px) {
     text {
       font-size: 16px;
@@ -674,22 +669,6 @@ html {
     }
   }
 }
-
-// .overlay {
-//   position: absolute;
-//   bottom: 0;
-//   margin: 0 auto;
-//   width: 100%;
-//   text-align: center;
-//   margin-bottom: 30px;
-//   color: white;
-//   &.i.fas {
-//     display: inline-block;
-//     border-radius: 50%;
-//     box-shadow: 0 0 2px #888;
-//     padding: 0.5em 0.6em;
-//   }
-// }
 
 * {
   -webkit-tap-highlight-color: transparent !important;
