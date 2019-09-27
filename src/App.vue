@@ -139,7 +139,7 @@ export default {
       ],
       scales: {
         aug: 'wholetone',
-        maj7: 'major',
+        maj7: 'lydian',
         dom7: 'mixolydian',
         M: 'major',
         min7: 'dorian',
