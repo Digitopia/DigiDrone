@@ -7,8 +7,8 @@
     >
       <!-- Improv Circles -->
       <circle
-        v-for="(circle, idx) in improvCircles"
-        :key="idx"
+        v-for="circle in improvCircles"
+        :key="circle.id"
         :cx="circle.x"
         :cy="circle.y"
         :r="circle.r"
