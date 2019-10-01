@@ -274,7 +274,7 @@ export default {
 
     volume() {
       console.log('vol:', this.volume)
-      Tone.Master.volume.linearRampToValueAtTime(this.volume, Tone.now() + 0.01)
+      Tone.Master.volume.rampTo(this.volume, 0.01)
     },
   },
 
@@ -355,7 +355,8 @@ export default {
           sustain: 0.3,
           release: 1,
         },
-      }).toMaster()
+      })
+      // .toMaster()
 
       // this.rootSynth = new Tone.OmniOscillator(this.root, 'amsine').chain(
       //   Tone.Master
@@ -400,10 +401,13 @@ export default {
         },
       })
 
+      this.compressor = new Tone.Compressor()
+
       // improv synth
       this.improvSynth = new Tone.PolySynth(6, Tone.Synth).chain(
         reverb,
-        Tone.Master
+        this.compressor
+        // Tone.Master
       )
       this.improvSynth.set({
         oscillator: {
@@ -420,6 +424,8 @@ export default {
       window.rootSynth = this.rootSynth
       window.droneSynth = this.droneSynth
       window.improvSynth = this.improvSynth
+
+      this.compressor.connect(Tone.Master)
     },
 
     setRandomConfiguration() {
