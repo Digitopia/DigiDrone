@@ -134,10 +134,10 @@ export default {
         },
         {
           id: 'volume',
-          activeValue: -10,
+          activeValue: -20,
           activeLabel: '&#xf027;',
           minValue: -30,
-          maxValue: -3,
+          maxValue: -16,
         },
       ],
       scales: {
@@ -319,6 +319,18 @@ export default {
           Tone.now(),
           random(0.6, 1)
         )
+        this.droneSynth2.triggerAttackRelease(
+          n.scientific(),
+          dur,
+          Tone.now(),
+          random(0.6, 1)
+        )
+        this.droneSynth3.triggerAttackRelease(
+          n.scientific(),
+          dur,
+          Tone.now(),
+          random(0.6, 1)
+        )
       }, this.pulse)
       this.loop.start(0)
     },
@@ -331,16 +343,6 @@ export default {
       reverb.decay = 3.5
       reverb.preDelay = 0.01
       reverb.generate()
-
-      // root synth
-      // this.rootSynth = new Tone.Oscillator({
-      //   type: 'sine',
-      //   frequency: this.root,
-      //   detune: 0,
-      //   phase: 0,
-      //   partials: [],
-      //   partialCount: 0,
-      // }).toMaster()
 
       this.rootSynth = new Tone.Synth({
         oscillator: {
@@ -356,33 +358,6 @@ export default {
           release: 1,
         },
       })
-      // .toMaster()
-
-      // this.rootSynth = new Tone.OmniOscillator(this.root, 'amsine').chain(
-      //   Tone.Master
-      // )
-      // this.rootSynth.set({
-      //   harmonicity: 0.5,
-      //   oscillator: {
-      //     type: 'sine',
-      //   },
-      //   envelope: {
-      //     attack: 0.01,
-      //     decay: 0.01,
-      //     sustain: 1,
-      //     release: 0.5,
-      //   },
-      //   modulation: {
-      //     type: 'sine',
-      //   },
-      //   modulationEnvelope: {
-      //     attack: 0.5,
-      //     decay: 0,
-      //     sustain: 1,
-      //     release: 0.5,
-      //   },
-      //   // portamento: Tone.Time('8n'),
-      // })
 
       // drone synth
       this.droneSynth = new Tone.PolySynth(6, Tone.Synth).chain(
@@ -392,11 +367,51 @@ export default {
       this.droneSynth.set({
         oscillator: {
           type: 'sine',
+          detune: 0,
+          volume: 0,
         },
         envelope: {
           attack: 0.25,
           decay: 0.5,
           sustain: 0.1,
+          release: 0.25,
+        },
+      })
+
+      // drone synth 2
+      this.droneSynth2 = new Tone.PolySynth(6, Tone.Synth).chain(
+        // reverb,
+        Tone.Master
+      )
+      this.droneSynth2.set({
+        oscillator: {
+          type: 'triangle',
+          detune: 0,
+          volume: -3,
+        },
+        envelope: {
+          attack: 0.25,
+          decay: 0.5,
+          sustain: 0.25,
+          release: 0.1,
+        },
+      })
+
+      // drone synth 3
+      this.droneSynth3 = new Tone.PolySynth(6, Tone.Synth).chain(
+        //reverb,
+        Tone.Master
+      )
+      this.droneSynth3.set({
+        oscillator: {
+          type: 'sine',
+          detune: 3,
+          volume: -3,
+        },
+        envelope: {
+          attack: 0.25,
+          decay: 0.5,
+          sustain: 0.25,
           release: 0.1,
         },
       })
@@ -421,9 +436,73 @@ export default {
         },
       })
 
+      // improv synth2
+      this.improvSynth2 = new Tone.PolySynth(1, Tone.Synth).chain(
+        // reverb,
+        this.compressor
+        // Tone.Master
+      )
+      this.improvSynth2.set({
+        oscillator: {
+          type: 'sine',
+          detune: -1200,
+          volume: 3,
+        },
+        envelope: {
+          attack: 0.1,
+          decay: 0.1,
+          sustain: 0.1,
+          release: 0.1,
+        },
+      })
+
+      // improv synth3
+      this.improvSynth3 = new Tone.PolySynth(3, Tone.Synth).chain(
+        // reverb,
+        this.compressor
+        // Tone.Master
+      )
+      this.improvSynth3.set({
+        oscillator: {
+          type: 'sine',
+          detune: -1200,
+          volume: 6,
+        },
+        envelope: {
+          attack: 0.005,
+          decay: 0.05,
+          sustain: 0.002,
+          release: 0.001,
+        },
+      })
+
+      // improv synth4
+      this.improvSynth4 = new Tone.PolySynth(1, Tone.Synth).chain(
+        reverb,
+        this.compressor
+        // Tone.Master
+      )
+      this.improvSynth4.set({
+        oscillator: {
+          type: 'triangle',
+          detune: -1200,
+          volume: 0,
+        },
+        envelope: {
+          attack: 0.005,
+          decay: 0.05,
+          sustain: 0.2,
+          release: 0.1,
+        },
+      })
       window.rootSynth = this.rootSynth
       window.droneSynth = this.droneSynth
+      window.droneSynth2 = this.droneSynth2
+      window.droneSynth3 = this.droneSynth3
       window.improvSynth = this.improvSynth
+      window.improvSynth2 = this.improvSynth2
+      window.improvSynth3 = this.improvSynth3
+      window.improvSynth4 = this.improvSynth4
 
       this.compressor.connect(Tone.Master)
     },
@@ -473,6 +552,27 @@ export default {
       console.log('improv:', n.scientific(), '@', amp)
 
       this.improvSynth.triggerAttackRelease(
+        n.scientific(),
+        this.improvNoteDuration,
+        Tone.now(),
+        amp
+      )
+
+      this.improvSynth2.triggerAttackRelease(
+        n.scientific(),
+        this.improvNoteDuration,
+        Tone.now(),
+        amp
+      )
+
+      this.improvSynth3.triggerAttackRelease(
+        n.scientific(),
+        this.improvNoteDuration,
+        Tone.now(),
+        amp
+      )
+
+      this.improvSynth4.triggerAttackRelease(
         n.scientific(),
         this.improvNoteDuration,
         Tone.now(),
