@@ -325,12 +325,6 @@ export default {
           Tone.now(),
           random(0.6, 1)
         )
-        this.droneSynth3.triggerAttackRelease(
-          n.scientific(),
-          dur,
-          Tone.now(),
-          random(0.6, 1)
-        )
       }, this.pulse)
       this.loop.start(0)
     },
@@ -352,10 +346,10 @@ export default {
           phase: 0,
         },
         envelope: {
-          attack: 0.005,
-          decay: 0.1,
-          sustain: 0.3,
-          release: 1,
+          attack: 0.25,
+          decay: 0.5,
+          sustain: 0.1,
+          release: 0.05,
         },
       })
 
@@ -374,7 +368,7 @@ export default {
           attack: 0.25,
           decay: 0.5,
           sustain: 0.1,
-          release: 0.25,
+          release: 0.05,
         },
       })
 
@@ -386,35 +380,18 @@ export default {
       this.droneSynth2.set({
         oscillator: {
           type: 'triangle',
-          detune: 0,
+          detune: 1200,
           volume: -3,
         },
         envelope: {
           attack: 0.25,
           decay: 0.5,
-          sustain: 0.25,
-          release: 0.1,
+          sustain: 0.1,
+          release: 0.05,
         },
       })
 
-      // drone synth 3
-      this.droneSynth3 = new Tone.PolySynth(6, Tone.Synth).chain(
-        //reverb,
-        Tone.Master
-      )
-      this.droneSynth3.set({
-        oscillator: {
-          type: 'sine',
-          detune: 3,
-          volume: -3,
-        },
-        envelope: {
-          attack: 0.25,
-          decay: 0.5,
-          sustain: 0.25,
-          release: 0.1,
-        },
-      })
+
 
       this.compressor = new Tone.Compressor()
 
@@ -427,9 +404,11 @@ export default {
       this.improvSynth.set({
         oscillator: {
           type: 'sine',
+          detune: 0,
+          volume: 3,
         },
         envelope: {
-          attack: 0.25,
+          attack: 0.005,
           decay: 0.5,
           sustain: 0.1,
           release: 0.1,
@@ -445,11 +424,11 @@ export default {
       this.improvSynth2.set({
         oscillator: {
           type: 'sine',
-          detune: -1200,
+          detune: 0,
           volume: 3,
         },
         envelope: {
-          attack: 0.1,
+          attack: 0.05,
           decay: 0.1,
           sustain: 0.1,
           release: 0.1,
@@ -465,8 +444,8 @@ export default {
       this.improvSynth3.set({
         oscillator: {
           type: 'sine',
-          detune: -1200,
-          volume: 6,
+          detune: 0,
+          volume: 3,
         },
         envelope: {
           attack: 0.005,
@@ -485,20 +464,19 @@ export default {
       this.improvSynth4.set({
         oscillator: {
           type: 'triangle',
-          detune: -1200,
-          volume: 0,
+          detune: 0,
+          volume: -3,
         },
         envelope: {
           attack: 0.005,
           decay: 0.05,
-          sustain: 0.2,
-          release: 0.1,
+          sustain: 0.05,
+          release: 0.05,
         },
       })
       window.rootSynth = this.rootSynth
       window.droneSynth = this.droneSynth
       window.droneSynth2 = this.droneSynth2
-      window.droneSynth3 = this.droneSynth3
       window.improvSynth = this.improvSynth
       window.improvSynth2 = this.improvSynth2
       window.improvSynth3 = this.improvSynth3
